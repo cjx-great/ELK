@@ -8,4 +8,5 @@
 * [5. Filebeat](filebeat.md)
 * [6. ElastAlert](elastalert.md)
   * [6.1 启动流程](elastalert/启动流程.md)
+  * [6.2 Rule处理](elastalert/Rule处理.md)
 

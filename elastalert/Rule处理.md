@@ -24,24 +24,8 @@
             except Exception as e:
                 self.handle_uncaught_exception(e, rule)
             else:
-                old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
-                elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
-                                       " %s alerts sent" % (
-                                           rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                           self.num_hits, self.num_dupes, num_matches, self.alerts_sent))
-                self.alerts_sent = 0
-
-                if next_run < datetime.datetime.utcnow():
-                    # We were processing for longer than our refresh interval
-                    # This can happen if --start was specified with a large time period
-                    # or if we are running too slow to process events in real time.
-                    logging.warning(
-                        "Querying from %s to %s took longer than %s!" % (
-                            old_starttime,
-                            pretty_ts(endtime, rule.get('use_local_time')),
-                            self.run_every
-                        )
-                    )
+                # 注释部分代码
+                ...
 
             self.remove_old_events(rule)
 
@@ -56,7 +40,79 @@
 ```
 
 大体流程：  
-> 1. 先处理上次未完成的rule，即`send_pending_alerts()`。
-> 2. 循环处理所有的rule，即`def run_rule(self, rule, endtime, starttime=None)`。
-> 3. 移除过时的事件，即`def remove_old_events(self, rule)`。
-> 4. 启动时如果没有设置 [--pin_rules](https://elastalert.readthedocs.io/en/latest/elastalert.html#running-elastalert)（`action='store_true'`），则从ES或者本地重新加载rules。
+>> 1. 先处理上次未完成的rule，即`send_pending_alerts()`。
+>> 2. 循环处理所有的rule，即`def run_rule(self, rule, endtime, starttime=None)`。
+>> 3. 移除过时的事件，即`def remove_old_events(self, rule)`。
+>> 4. 启动时如果没有设置 [--pin_rules](https://elastalert.readthedocs.io/en/latest/elastalert.html#running-elastalert)（`action='store_true'`），则从ES或者本地重新加载rules。
+
+* `send_pending_alerts()`:  
+
+```   
+    def send_pending_alerts(self):
+        pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)
+        for alert in pending_alerts:
+            _id = alert['_id']
+            alert = alert['_source']
+            try:
+                rule_name = alert.pop('rule_name')
+                alert_time = alert.pop('alert_time')
+                match_body = alert.pop('match_body')
+            except KeyError:
+                # Malformed alert, drop it
+                continue
+
+            # Find original rule
+            for rule in self.rules:
+                if rule['name'] == rule_name:
+                    break
+            else:
+                # Original rule is missing, keep alert for later if rule reappears
+                continue
+
+            # Set current_es for top_count_keys query
+            self.current_es = elasticsearch_client(rule)
+            self.current_es_addr = (rule['es_host'], rule['es_port'])
+
+            # Send the alert unless it's a future alert
+            if ts_now() > ts_to_dt(alert_time):
+                aggregated_matches = self.get_aggregated_matches(_id)
+                if aggregated_matches:
+                    matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
+                    self.alert(matches, rule, alert_time=alert_time)
+                else:
+                    self.alert([match_body], rule, alert_time=alert_time)
+
+                if rule['current_aggregate_id']:
+                    for qk, agg_id in rule['current_aggregate_id'].iteritems():
+                        if agg_id == _id:
+                            rule['current_aggregate_id'].pop(qk)
+                            break
+
+                # Delete it from the index
+                try:
+                    self.writeback_es.delete(index=self.writeback_index,
+                                             doc_type='elastalert',
+                                             id=_id)
+                except:  # TODO: Give this a more relevant exception, try:except: is evil.
+                    self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
+
+        # Send in memory aggregated alerts
+        for rule in self.rules:
+            if rule['agg_matches']:
+                for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].iteritems():
+                    if ts_now() > aggregate_alert_time:
+                        alertable_matches = [
+                            agg_match
+                            for agg_match
+                            in rule['agg_matches']
+                            if self.get_aggregation_key_value(rule, agg_match) == aggregation_key_value
+                            ]
+                        self.alert(alertable_matches, rule)
+                        rule['agg_matches'] = [
+                            agg_match
+                            for agg_match
+                            in rule['agg_matches']
+                            if self.get_aggregation_key_value(rule, agg_match) != aggregation_key_value
+                            ]
+```
+

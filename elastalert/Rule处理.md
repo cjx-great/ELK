@@ -20,10 +20,7 @@
             try:
                 num_matches = self.run_rule(rule, endtime, self.starttime)
             except EAException as e:
-                self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
-            except Exception as e:
-                self.handle_uncaught_exception(e, rule)
-            else:
+                ...
                 # 省略部分代码
                 ...
 

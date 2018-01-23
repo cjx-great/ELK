@@ -48,8 +48,9 @@
 * `send_pending_alerts()`:  
 
   首先看一下[`alert_time_limit`](http://elastalert.readthedocs.io/en/latest/running_elastalert.html#downloading-and-configuring)配置字段的意思，官方解释如下：
-![](/assets/屏幕快照 2018-01-23 下午5.53.08.png)
-接下来将会根据该字段查找alerts。
+![](/assets/屏幕快照 2018-01-23 下午5.53.08.png)  
+
+  接下来将会根据该字段查找alerts。
 ```   
     def send_pending_alerts(self):
         pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)

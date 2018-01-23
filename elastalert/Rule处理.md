@@ -79,4 +79,80 @@
             logging.exception("Error finding recent pending alerts: %s %s" % (e, query))
         return []
 ```
-重点在于`inner_query`和`time_filter`字段。
+重点在于`inner_query`和`time_filter`字段。  
+回到`def send_pending_alerts(self)`方法：
+
+```
+    def send_pending_alerts(self):
+        pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)
+        for alert in pending_alerts:
+            _id = alert['_id']
+            alert = alert['_source']
+            try:
+                rule_name = alert.pop('rule_name')
+                alert_time = alert.pop('alert_time')
+                match_body = alert.pop('match_body')
+            except KeyError:
+                # Malformed alert, drop it
+                continue
+
+            # Find original rule
+            for rule in self.rules:
+                if rule['name'] == rule_name:
+                    break
+            else:
+                # Original rule is missing, keep alert for later if rule reappears
+                continue
+
+            # Set current_es for top_count_keys query
+            self.current_es = elasticsearch_client(rule)
+            self.current_es_addr = (rule['es_host'], rule['es_port'])
+
+            # Send the alert unless it's a future alert
+            if ts_now() > ts_to_dt(alert_time):
+                aggregated_matches = self.get_aggregated_matches(_id)
+                if aggregated_matches:
+                    matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
+                    self.alert(matches, rule, alert_time=alert_time)
+                else:
+                    # If this rule isn't using aggregation, this must be a retry of a failed alert
+                    retried = False
+                    if not rule.get('aggregation'):
+                        retried = True
+                    self.alert([match_body], rule, alert_time=alert_time, retried=retried)
+
+                if rule['current_aggregate_id']:
+                    for qk, agg_id in rule['current_aggregate_id'].iteritems():
+                        if agg_id == _id:
+                            rule['current_aggregate_id'].pop(qk)
+                            break
+
+                # Delete it from the index
+                try:
+                    self.writeback_es.delete(index=self.writeback_index,
+                                             doc_type='elastalert',
+                                             id=_id)
+                except ElasticsearchException:  # TODO: Give this a more relevant exception, try:except: is evil.
+                    self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
+
+        # Send in memory aggregated alerts
+        for rule in self.rules:
+            if rule['agg_matches']:
+                for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].iteritems():
+                    if ts_now() > aggregate_alert_time:
+                        alertable_matches = [
+                            agg_match
+                            for agg_match
+                            in rule['agg_matches']
+                            if self.get_aggregation_key_value(rule, agg_match) == aggregation_key_value
+                        ]
+                        self.alert(alertable_matches, rule)
+                        rule['agg_matches'] = [
+                            agg_match
+                            for agg_match
+                            in rule['agg_matches']
+                            if self.get_aggregation_key_value(rule, agg_match) != aggregation_key_value
+                        ]
+```
+>> 1. 匹配alert与rule（`if rule['name'] == rule_name`）,匹配成功则进行告警（判断是否立刻进行）。
+>> 2. 删除告警。

@@ -32,13 +32,13 @@
 ```
 
 大体流程：  
->> 1. 先处理上次未发送的alerts，即`self.send_pending_alerts()`。
+>> 1. 先处理尚未发送的alerts，即`self.send_pending_alerts()`。
 >> 2. 循环处理所有的rule，即`self.run_rule(rule, endtime, self.starttime)`。
 >> 3. 移除过时的事件，即`self.remove_old_events(rule)`。
 >> 4. 启动时如果没有设置 [--pin_rules](https://elastalert.readthedocs.io/en/latest/elastalert.html#running-elastalert)（`action='store_true'`），则`self.load_rule_changes()`。
 
 <br>
-####1. 处理上次未发送的alerts  
+####1. 处理尚未发送的alerts  
 
 ```   
     def send_pending_alerts(self):
@@ -48,7 +48,7 @@
 ```
 首先看一下[`alert_time_limit`](http://elastalert.readthedocs.io/en/latest/running_elastalert.html#downloading-and-configuring)配置字段的意思，官方解释如下:  
 ![](/assets/屏幕快照 2018-01-23 下午5.53.08.png)   
-接下来会调用`def find_recent_pending_alerts(self, time_limit)`根据该字段查找alerts:  
+接下来会调用`def find_recent_pending_alerts(self, time_limit)`根据该字段查找最近未处理的alerts(在[Metadata Index](https://elastalert.readthedocs.io/en/latest/elastalert_status.html#elastalert)中查找):  
 
 ```
     def find_recent_pending_alerts(self, time_limit):
@@ -79,3 +79,4 @@
             logging.exception("Error finding recent pending alerts: %s %s" % (e, query))
         return []
 ```
+重点在于`inner_query`和`time_filter`字段。

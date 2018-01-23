@@ -40,16 +40,15 @@
 ```
 
 大体流程：  
->> 1. 先处理上次未完成的alerts，即`send_pending_alerts()`。
+>> 1. 先处理上次未发送的alerts，即`send_pending_alerts()`。
 >> 2. 循环处理所有的rule，即`def run_rule(self, rule, endtime, starttime=None)`。
 >> 3. 移除过时的事件，即`def remove_old_events(self, rule)`。
->> 4. 最后，若启动时如果没有设置 [--pin_rules](https://elastalert.readthedocs.io/en/latest/elastalert.html#running-elastalert)（`action='store_true'`），则从ES或者本地重新加载rules。
+>> 4. 启动时如果没有设置 [--pin_rules](https://elastalert.readthedocs.io/en/latest/elastalert.html#running-elastalert)（`action='store_true'`），则从ES或者本地重新加载rules。
 
-* `send_pending_alerts()`:  
+<br>
+***
+<font size=4>`def send_pending_alerts(self)`:</font>
 
-  首先看一下[`alert_time_limit`](http://elastalert.readthedocs.io/en/latest/running_elastalert.html#downloading-and-configuring)配置字段的意思，官方解释如下：  
-![](/assets/屏幕快照 2018-01-23 下午5.53.08.png)<br>
-  接下来将会根据该字段查找alerts。
 ```   
     def send_pending_alerts(self):
         pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)
@@ -118,4 +117,6 @@
                             if self.get_aggregation_key_value(rule, agg_match) != aggregation_key_value
                             ]
 ```
-
+首先看一下[`alert_time_limit`](http://elastalert.readthedocs.io/en/latest/running_elastalert.html#downloading-and-configuring)配置字段的意思，官方解释如下：
+![](/assets/屏幕快照 2018-01-23 下午5.53.08.png)<br>
+接下来将会根据该字段查找alerts。

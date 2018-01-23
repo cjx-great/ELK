@@ -45,9 +45,8 @@
 >> 3. 移除过时的事件，即`def remove_old_events(self, rule)`。
 >> 4. 启动时如果没有设置 [--pin_rules](https://elastalert.readthedocs.io/en/latest/elastalert.html#running-elastalert)（`action='store_true'`），则从ES或者本地重新加载rules。
 
-<br>
-***
-<font size=4>`def send_pending_alerts(self)`:</font>
+<br> 
+`def send_pending_alerts(self)`:
 
 ```   
     def send_pending_alerts(self):

@@ -154,5 +154,12 @@
                             if self.get_aggregation_key_value(rule, agg_match) != aggregation_key_value
                         ]
 ```
->> 1. 匹配alert与rule（`if rule['name'] == rule_name`）,匹配成功则进行告警（判断是否立刻进行）。
->> 2. 删除告警。
+大体流程：
+> > 1.匹配alert与rule（`if rule['name'] == rule_name`）,匹配成功则进行告警，不成功则保留至下一次。  
+> > > 1.1 根据rule中的配置连接ES（`self.current_es = elasticsearch_client(rule)`）。  
+> > > 1.2 确定当前alert是需要发送但是未发送的（`if ts_now() > ts_to_dt(alert_time)`）。  
+> > > 1.3 判断该rule是否使用了聚集。  
+> > 
+> > 2.告警。  
+> > 3.从ES中删除该alert。
+

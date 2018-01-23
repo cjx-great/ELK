@@ -32,10 +32,10 @@
 ```
 
 大体流程：  
->> 1. 先处理上次未发送的alerts，即`send_pending_alerts()`。
->> 2. 循环处理所有的rule，即`def run_rule(self, rule, endtime, starttime=None)`。
->> 3. 移除过时的事件，即`def remove_old_events(self, rule)`。
->> 4. 启动时如果没有设置 [--pin_rules](https://elastalert.readthedocs.io/en/latest/elastalert.html#running-elastalert)（`action='store_true'`），则重新加载rules。
+>> 1. 先处理上次未发送的alerts，即`self.send_pending_alerts()`。
+>> 2. 循环处理所有的rule，即`self.run_rule(rule, endtime, self.starttime)`。
+>> 3. 移除过时的事件，即`self.remove_old_events(rule)`。
+>> 4. 启动时如果没有设置 [--pin_rules](https://elastalert.readthedocs.io/en/latest/elastalert.html#running-elastalert)（`action='store_true'`），则`self.load_rule_changes()`。
 
 <br>
 ####1. 处理上次未发送的alerts  

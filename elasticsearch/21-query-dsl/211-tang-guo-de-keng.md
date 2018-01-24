@@ -1,4 +1,4 @@
-根据`query_string`查询某段时间的Index
+* **根据`query_string`查询某段时间的Index**
 
 ```
 查询2018-01-23这一天：

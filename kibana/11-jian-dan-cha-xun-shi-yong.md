@@ -29,5 +29,4 @@ firstname:(+H* -He*)
 搜索firstname字段里H开头的结果，并且排除firstname里He开头的结果
 
 * 转义特殊字符  
-\+ - && || ! () {} [] ^" ~ * ? : \  
-<font color=red>注意：以上字符当作值搜索的时候需要用 \ 转义</font> 
+\+&nbsp;&nbsp; -&nbsp;&nbsp; &&&nbsp;&nbsp; ||&nbsp;&nbsp; !&nbsp;&nbsp; ()&nbsp;&nbsp; {}&nbsp;&nbsp; []&nbsp;&nbsp; ^&nbsp;&nbsp;"&nbsp;&nbsp; ~&nbsp;&nbsp; *&nbsp;&nbsp; ?&nbsp;&nbsp; :&nbsp;&nbsp; \

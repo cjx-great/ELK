@@ -7,11 +7,12 @@
 * 通配符查询 ：  
  ？: 匹配单个字符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;例：A?C  
  \* : 匹配0个或多个字符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;例：A*C  
- <font color=red>注意：通配符不能放在开头</font>  
+ 注意：通配符不能放在开头 
+ 
  
 * 范围查询  
 搜索：age:[20 TO 30]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;age:{20 TO 30}  
- <font color=red>注：[ ]表示端点数值包含在范围内，{ }表示端点数值不包含在范围内</font>   
+ 注：[ ]表示端点数值包含在范围内，{ }表示端点数值不包含在范围内
  
 * 逻辑操作  
 AND&nbsp;&nbsp;OR&nbsp;&nbsp;&nbsp;&nbsp;例：key:value &nbsp;AND/OR &nbsp;key:value  

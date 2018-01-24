@@ -80,8 +80,8 @@
         return []
 ```
 重点在于`inner_query`和`time_filter`变量的计算，其中`doc_type='elastalert'`的官方解释如下：  
-![](/assets/屏幕快照 2018-01-24 上午10.46.20.png)   
-
+![](/assets/屏幕快照 2018-01-24 上午10.46.20.png)
+<br>
 回到`def send_pending_alerts(self)`方法：
 
 ```

@@ -1,0 +1,1 @@
+##### Kibana 5.5 官网文档：[https://www.elastic.co/guide/en/kibana/5.5/index.html](https://www.elastic.co/guide/en/kibana/5.5/index.html)

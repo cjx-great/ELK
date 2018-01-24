@@ -2,6 +2,7 @@
 
 * [前言](README.md)
 * [1. Kibana](kibana.md)
+  * [1.1 简单查询使用](kibana/11-jian-dan-cha-xun-shi-yong.md)
 * [2. Elasticsearch](elasticsearch.md)
 * [3. Logstash](logstash.md)
 * [4. Kafka](kafka.md)

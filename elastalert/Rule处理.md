@@ -48,7 +48,7 @@
 ```
 首先看一下[`alert_time_limit`](http://elastalert.readthedocs.io/en/latest/running_elastalert.html#downloading-and-configuring)配置字段的意思，官方解释如下:  
 ![](/assets/屏幕快照 2018-01-23 下午5.53.08.png)   
-接下来会调用`def find_recent_pending_alerts(self, time_limit)`根据该字段查找最近未处理的alerts(在[Metadata Index](https://elastalert.readthedocs.io/en/latest/elastalert_status.html#elastalert)中查找):  
+接下来会调用`def find_recent_pending_alerts(self, time_limit)`根据该字段查找最近未处理的alerts(在[Metadata Index](https://elastalert.readthedocs.io/en/latest/elastalert_status.html#elastalert)中查找)，其中包括上次未发送的alert和最新的alert，时间以`time_limit `为基准:  
 
 ```
     def find_recent_pending_alerts(self, time_limit):
@@ -163,5 +163,6 @@
 > > > 1.3 查询所有该聚集下的告警`def get_aggregated_matches(self, _id)`。  
 > > 
 > > 2.告警。  
-> > 3.从ES中删除该alert。
+> > 3.从ES中删除该alert。  
+> > 4.发送“聚合”告警。
 

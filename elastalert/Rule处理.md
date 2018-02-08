@@ -167,9 +167,122 @@
 > > 4.&nbsp;发送“聚合”告警。  
 
 <br>
-####2. 循环处理所有的rule
+####2. 循环处理所有的rule  
+```
+def run_rule(self, rule, endtime, starttime=None):
+        """ Run a rule for a given time period, including querying and alerting on results.
 
-####3. 移除过时的事件
+        :param rule: The rule configuration.
+        :param starttime: The earliest timestamp to query.
+        :param endtime: The latest timestamp to query.
+        :return: The number of matches that the rule produced.
+        """
+        run_start = time.time()
 
-####4. 启动时如果没有设置
+        self.current_es = elasticsearch_client(rule)
+        self.current_es_addr = (rule['es_host'], rule['es_port'])
+
+        # If there are pending aggregate matches, try processing them
+        for x in range(len(rule['agg_matches'])):
+            match = rule['agg_matches'].pop()
+            self.add_aggregated_alert(match, rule)
+
+        # Start from provided time if it's given
+        if starttime:
+            rule['starttime'] = starttime
+        else:
+            self.set_starttime(rule, endtime)
+
+        rule['original_starttime'] = rule['starttime']
+
+        # Don't run if starttime was set to the future
+        if ts_now() <= rule['starttime']:
+            logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
+            return 0
+
+        # Run the rule. If querying over a large time period, split it up into segments
+        self.num_hits = 0
+        self.num_dupes = 0
+        segment_size = self.get_segment_size(rule)
+
+        tmp_endtime = rule['starttime']
+
+        while endtime - rule['starttime'] > segment_size:
+            tmp_endtime = tmp_endtime + segment_size
+            if not self.run_query(rule, rule['starttime'], tmp_endtime):
+                return 0
+            rule['starttime'] = tmp_endtime
+            rule['type'].garbage_collect(tmp_endtime)
+
+        if rule.get('aggregation_query_element'):
+            if endtime - tmp_endtime == segment_size:
+                self.run_query(rule, tmp_endtime, endtime)
+            elif total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
+                rule['starttime'] = rule['original_starttime']
+                return 0
+            else:
+                endtime = tmp_endtime
+        else:
+            if not self.run_query(rule, rule['starttime'], endtime):
+                return 0
+            rule['type'].garbage_collect(endtime)
+
+        # Process any new matches
+        num_matches = len(rule['type'].matches)
+        while rule['type'].matches:
+            match = rule['type'].matches.pop(0)
+            match['num_hits'] = self.num_hits
+            match['num_matches'] = num_matches
+
+            # If realert is set, silence the rule for that duration
+            # Silence is cached by query_key, if it exists
+            # Default realert time is 0 seconds
+            silence_cache_key = rule['name']
+            query_key_value = self.get_query_key_value(rule, match)
+            if query_key_value is not None:
+                silence_cache_key += '.' + query_key_value
+
+            if self.is_silenced(rule['name'] + "._silence") or self.is_silenced(silence_cache_key):
+                elastalert_logger.info('Ignoring match for silenced rule %s' % (silence_cache_key,))
+                continue
+
+            if rule['realert']:
+                next_alert, exponent = self.next_alert_time(rule, silence_cache_key, ts_now())
+                self.set_realert(silence_cache_key, next_alert, exponent)
+
+            if rule.get('run_enhancements_first'):
+                try:
+                    for enhancement in rule['match_enhancements']:
+                        try:
+                            enhancement.process(match)
+                        except EAException as e:
+                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                except DropMatchException:
+                    continue
+
+            # If no aggregation, alert immediately
+            if not rule['aggregation']:
+                self.alert([match], rule)
+                continue
+
+            # Add it as an aggregated match
+            self.add_aggregated_alert(match, rule)
+
+        # Mark this endtime for next run's start
+        rule['previous_endtime'] = endtime
+
+        time_taken = time.time() - run_start
+        # Write to ES that we've run this rule against this time period
+        body = {'rule_name': rule['name'],
+                'endtime': endtime,
+                'starttime': rule['original_starttime'],
+                'matches': num_matches,
+                'hits': self.num_hits,
+                '@timestamp': ts_now(),
+                'time_taken': time_taken}
+        self.writeback('elastalert_status', body)
+
+        return num_matches
+```
+
 

@@ -1,5 +1,4 @@
-#
-#####参考：[https://tech.meituan.com/kafka-fs-design-theory.html](https://tech.meituan.com/kafka-fs-design-theory.html)
+######参考：[https://tech.meituan.com/kafka-fs-design-theory.html](https://tech.meituan.com/kafka-fs-design-theory.html)
 
 <br>
 ![](/assets/kafka文件存储-1.png)

@@ -1,5 +1,4 @@
-#
-## **一个Broker:**
+### **一个Broker:**
 
 ######参考：[https://tech.meituan.com/kafka-fs-design-theory.html](https://tech.meituan.com/kafka-fs-design-theory.html)
 

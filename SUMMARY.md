@@ -6,6 +6,7 @@
 * [2. Elasticsearch](elasticsearch.md)
   * [2.1 Query DSL](elasticsearch/21-query-dsl.md)
     * [2.1.1 实战](elasticsearch/21-query-dsl/实战.md)
+  * [2.2 Refresh and Flush](elasticsearch/22-refresh-and-flush.md)
 * [3. Logstash](logstash.md)
 * [4. Kafka](kafka.md)
   * [4.1 文件存储机制](kafka/41-wen-jian-cun-chu-ji-zhi.md)
